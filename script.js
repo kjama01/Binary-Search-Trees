@@ -87,6 +87,19 @@ class Tree {
       }
     }
   }
+  find(value) {
+    let node = this.root;
+    while (node !== null) {
+      if (value === node.root) {
+        return node;
+      } else if (value < node.root) {
+        node = node.left;
+      } else {
+        node = node.right;
+      }
+    }
+    return null;
+  }
   levelOrder(callback) {
     if (typeof callback !== "function") {
       throw new Error("A callback function is required");
@@ -172,10 +185,10 @@ class Tree {
   }
   getHeight(value) {
     let node = this.root;
-    while (true) {
-      if (value < node.root) {
+    while (node !== null) {
+      if (value < node.value) {
         node = node.left;
-      } else if (value > node.root) {
+      } else if (value > node.value) {
         node = node.right;
       } else {
         break;
@@ -188,7 +201,8 @@ class Tree {
       const right = height(node.right);
       return Math.max(left, right) + 1;
     };
-    return height(node, 0);
+
+    return height(node);
   }
   depth(value) {
     let node = this.root;
@@ -207,27 +221,28 @@ class Tree {
     if (!node) return -1;
   }
   isBalanced() {
-    const check = (node) => {
-      let next = null;
-      if (node.left && node.right) return true;
-      if (!node.left && node.right) {
-        next = node.right;
-        if (next.left || node.right) return false;
-      } else if (node.left && !node.right) {
-        next = node.left;
-        if (next.left || node.right) return false;
-      } else {
-        return true;
-      }
+    const height = (node) => {
+      if (!node) return 0;
+      const leftHeight = height(node.left);
+      if (leftHeight === -1) return -1;
+      const rightHeight = height(node.right);
+      if (rightHeight === -1) return -1;
+      if (Math.abs(leftHeight - rightHeight) > 1) return -1;
+      return Math.max(leftHeight, rightHeight) + 1;
     };
+    return height(this.root) !== -1;
+  }
+  rebalance() {
+    const newTree = [];
     const traverse = (node) => {
       if (!node) return;
-      if (!check(node)) return false;
-      if (!traverse(node.left)) return false;
-      if (!traverse(node.right)) return false;
-      return true;
+      traverse(node.left);
+      newTree.push(node.value);
+      traverse(node.right);
     };
-    return traverse(this.root);
+    traverse(this.root);
+    newTree.sort((a, b) => a - b);
+    this.root = this.buildTree(newTree);
   }
 }
 const prettyPrint = (node, prefix = "", isLeft = true) => {
@@ -242,8 +257,14 @@ const prettyPrint = (node, prefix = "", isLeft = true) => {
     prettyPrint(node.left, `${prefix}${isLeft ? "    " : "│   "}`, true);
   }
 };
-
-const tree = new Tree([1, 7, 4, 23, 8, 9, 4, 3, 5, 7, 9, 67, 6345, 324]);
+function generateTab() {
+  const tab = [];
+  for (let i = 0; i < 100; i++) {
+    tab.push(Math.floor(Math.random() * 100) + 1);
+  }
+  return tab;
+}
+const tree = new Tree(generateTab());
 // tree.insert(10);
 // tree.deleteItem(67);
 tree.levelOrder((node) => {
@@ -263,5 +284,13 @@ tree.postOrder((node) => {
 });
 prettyPrint(tree.root);
 console.log("HEIGHT " + tree.getHeight(23));
-console.log("depth " + tree.depth(123412312));
-console.log(tree.isBalanced());
+console.log("DEPTH " + tree.depth(123412312));
+console.log("Balanced " + tree.isBalanced());
+tree.insert(120);
+tree.insert(130);
+tree.insert(140);
+tree.insert(510);
+tree.insert(106);
+console.log("Balanced " + tree.isBalanced());
+tree.rebalance();
+console.log("Balanced " + tree.isBalanced());
